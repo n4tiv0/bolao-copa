@@ -1,0 +1,39 @@
+services:
+  db:
+    image: postgres:17-alpine
+    container_name: bolao-copa-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: bolao_copa
+      POSTGRES_USER: bolao
+      POSTGRES_PASSWORD: bolao
+    ports:
+      - "5432:5432"
+    volumes:
+      - bolao_postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bolao -d bolao_copa"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build: .
+    container_name: bolao-copa-app
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://bolao:bolao@db:5432/bolao_copa?schema=public
+      AUTH_SECRET: troque-este-segredo-em-producao
+      API_FOOTBALL_KEY: YOUR_API_KEY_HERE
+      WORLD_CUP_LEAGUE_ID: "1"
+      WORLD_CUP_SEASON: "2026"
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+    ports:
+      - "3000:3000"
+    command: sh -c "npx prisma db push && npm run prisma:seed && node server.js"
+
+volumes:
+  bolao_postgres:
