@@ -1,54 +1,54 @@
-import { cookies } from "next/headers";
-import jwt from "jsonwebtoken";
+import NextAuth, { DefaultSession } from "next-auth";
+import Google from "next-auth/providers/google";
+import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "./db";
 
-const COOKIE_NAME = "bolao_session";
-
-type SessionPayload = {
-  sub: string;
-  role: "USER" | "ADMIN";
-};
-
-export function signSession(payload: SessionPayload) {
-  return jwt.sign(payload, process.env.AUTH_SECRET || "dev-secret-change-me", {
-    expiresIn: "7d",
-  });
+declare module "next-auth" {
+  interface Session {
+    user: {
+      id: string;
+      role: string;
+      paid: boolean;
+      points: number;
+    } & DefaultSession["user"]
+  }
 }
 
-export async function setSessionCookie(token: string) {
-  const store = await cookies();
-  store.set(COOKIE_NAME, token, {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    path: "/",
-    maxAge: 60 * 60 * 24 * 7,
-  });
-}
-
-export async function clearSessionCookie() {
-  const store = await cookies();
-  store.delete(COOKIE_NAME);
-}
+export const { handlers, auth, signIn, signOut } = NextAuth({
+  adapter: PrismaAdapter(prisma),
+  providers: [Google],
+  callbacks: {
+    async session({ session, user }) {
+      if (session.user) {
+        session.user.id = user.id;
+        const dbUser = user as any;
+        session.user.role = dbUser.role || "USER";
+        session.user.paid = dbUser.paid || false;
+        session.user.points = dbUser.points || 0;
+      }
+      return session;
+    }
+  },
+  events: {
+    async createUser({ user }) {
+      if (user.email === 'angelincrm@gmail.com') {
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { role: 'ADMIN' }
+        });
+      }
+    }
+  }
+});
 
 export async function getCurrentUser() {
-  const store = await cookies();
-  const token = store.get(COOKIE_NAME)?.value;
-  if (!token) return null;
+  const session = await auth();
+  if (!session?.user?.id) return null;
 
-  try {
-    const payload = jwt.verify(
-      token,
-      process.env.AUTH_SECRET || "dev-secret-change-me"
-    ) as SessionPayload;
-
-    return prisma.user.findUnique({
-      where: { id: payload.sub },
-      include: { championTeam: true },
-    });
-  } catch {
-    return null;
-  }
+  return prisma.user.findUnique({
+    where: { id: session.user.id },
+    include: { championTeam: true },
+  });
 }
 
 export async function requireAdmin() {
