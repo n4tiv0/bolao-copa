@@ -7,10 +7,6 @@ generator client {
   provider = "prisma-client-js"
 }
 
-// ----------------------------------------------------------------------------
-// 1. NextAuth Core & Auth User
-// ----------------------------------------------------------------------------
-
 model User {
   id                    String        @id @default(uuid())
   name                  String?
@@ -19,24 +15,16 @@ model User {
   image                 String?
   role                  String        @default("USER") // USER, ADMIN
   paid                  Boolean       @default(false)
-  pixReference          String?       // reference for the main registration
+  pixReference          String?       // reference for the main R$ 50 registration
   paymentStatus         String        @default("PENDING_PAYMENT") // PENDING_PAYMENT, PENDING_APPROVAL, PAID
-  points                Int           @default(0) // Global Ranking Points
-  
+  points                Int           @default(0)
   championTeamId        String?       // ID of selected champion team
   championTeam          Team?         @relation("UserChampion", fields: [championTeamId], references: [id])
-  
-  predictions           Prediction[]  // Global Guesses
+  predictions           Prediction[]
   payments              Payment[]
   championPicks         ChampionPick[]
-  
   accounts              Account[]
   sessions              Session[]
-
-  // --- From NLW Copa (Private Groups) ---
-  participatingAt       Participant[] 
-  ownPolls              Poll[]
-
   createdAt             DateTime      @default(now())
   updatedAt             DateTime      @updatedAt
 
@@ -79,10 +67,6 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
-// ----------------------------------------------------------------------------
-// 2. Bolão Global (Sports & Betting)
-// ----------------------------------------------------------------------------
-
 model Team {
   id                    String        @id // e.g. "BRA", "ARG", "FRA"
   name                  String
@@ -112,7 +96,7 @@ model ChampionPick {
   @@index([teamId])
 }
 
-model Match { // Replaces NLW 'Game'
+model Match {
   id                    Int           @id // official match index/id
   externalId            Int?          // match ID from API
   homeTeamId            String
@@ -133,7 +117,7 @@ model Match { // Replaces NLW 'Game'
   @@index([status])
 }
 
-model Prediction { // Replaces NLW 'Guess'
+model Prediction {
   id                    String        @id @default(uuid())
   userId                String
   user                  User          @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -164,30 +148,4 @@ model Payment {
 
   @@index([userId])
   @@index([status])
-}
-
-// ----------------------------------------------------------------------------
-// 3. Private Polls (NLW Copa)
-// ----------------------------------------------------------------------------
-
-model Poll {
-  id        String   @id @default(cuid())
-  title     String
-  code      String   @unique
-  createdAt DateTime @default(now())
-  ownerId   String?
-
-  participants Participant[]
-  owner        User?         @relation(fields: [ownerId], references: [id])
-}
-
-model Participant {
-  id     String @id @default(cuid())
-  userId String
-  pollId String
-
-  user User @relation(fields: [userId], references: [id])
-  poll Poll @relation(fields: [pollId], references: [id])
-
-  @@unique([userId, pollId])
 }
