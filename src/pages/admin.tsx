@@ -12,7 +12,7 @@ export default function AdminDashboard() {
 
   // Apenas role ADMIN pode acessar (Role não está exposta no tipo padrão do NextAuth session, 
   // mas assumimos que seja o email do admin ou uma validação de backend)
-  if (!session || session.user?.email !== "admin@seu-dominio.com") {
+  if (!session || session.user?.email !== "angelincrm@gmail.com") {
     return (
       <Layout title="Acesso Negado">
         <h1 className="text-white text-center text-2xl mt-10">Acesso Restrito ao Administrador</h1>

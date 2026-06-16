@@ -62,7 +62,7 @@ export default async function handler(
             id: true,
             user: {
               select: {
-                avatarUrl: true,
+                image: true,
               },
             },
           },
