@@ -1,16 +1,25 @@
 import { Game } from "../../components/Game";
 import { Layout } from "../../components/Layout";
 import { prisma } from "../../lib/db";
-import { auth } from "@/lib/auth";
+import { GetServerSidePropsContext } from "next";
 
-export async function getServerSideProps(context) {
-  const session = await auth(context.req, context.res);
+export async function getServerSideProps(context: GetServerSidePropsContext) {
+  const token = context.req.cookies["authjs.session-token"] || context.req.cookies["__Secure-authjs.session-token"];
   
-  if (!session) {
+  if (!token) {
     return { redirect: { destination: "/", permanent: false } };
   }
 
-  const { id } = context.params;
+  const session = await prisma.session.findUnique({
+    where: { sessionToken: token },
+    include: { user: true }
+  });
+
+  if (!session?.user?.id) {
+    return { redirect: { destination: "/", permanent: false } };
+  }
+
+  const id = context.params?.id as string;
 
   // Verifica se o bolão existe e se o usuário participa
   const poll = await prisma.poll.findUnique({
@@ -46,7 +55,7 @@ export async function getServerSideProps(context) {
   };
 }
 
-export default function PollDetails({ poll, matches }) {
+export default function PollDetails({ poll, matches }: { poll: any; matches: any[] }) {
   return (
     <Layout title={`Bolão: ${poll.title}`}>
       <div className="flex flex-col mt-12 px-4 max-w-4xl mx-auto">

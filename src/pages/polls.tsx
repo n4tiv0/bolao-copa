@@ -1,12 +1,26 @@
 import { Poll } from "../components/Poll";
 import { Layout } from "../components/Layout";
 import { prisma } from "../lib/db";
-import { auth } from "@/lib/auth";
+import { GetServerSidePropsContext } from "next";
 
-export async function getServerSideProps(context) {
-  const session = await auth(context.req, context.res);
+export async function getServerSideProps(context: GetServerSidePropsContext) {
+  const token = context.req.cookies["authjs.session-token"] || context.req.cookies["__Secure-authjs.session-token"];
   
-  if (!session) {
+  if (!token) {
+    return {
+      redirect: {
+        destination: "/",
+        permanent: false,
+      },
+    };
+  }
+
+  const session = await prisma.session.findUnique({
+    where: { sessionToken: token },
+    include: { user: true }
+  });
+
+  if (!session?.user?.id) {
     return {
       redirect: {
         destination: "/",
@@ -42,7 +56,7 @@ export async function getServerSideProps(context) {
   };
 }
 
-export default function Polls({ polls }) {
+export default function Polls({ polls }: { polls: any[] }) {
   return (
     <Layout title="NLW Copa | Bolões">
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-12 px-4">
