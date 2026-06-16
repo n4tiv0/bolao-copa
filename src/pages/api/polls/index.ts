@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from "next";
-import { auth } from "@/lib/auth";
+import { getServerSession } from "@/lib/getServerSession";
 import { prisma } from "@/lib/db";
 import crypto from "crypto";
 
@@ -8,7 +8,7 @@ export default async function handler(
   res: NextApiResponse
 ) {
   if (req.method === "POST") {
-    const session = await auth(req, res);
+    const session = await getServerSession(req);
 
     if (!session || !session.user) {
       return res.status(401).json({ error: "Unauthorized" });
@@ -39,7 +39,7 @@ export default async function handler(
   }
 
   if (req.method === "GET") {
-    const session = await auth(req, res);
+    const session = await getServerSession(req);
 
     if (!session || !session.user) {
       return res.status(401).json({ error: "Unauthorized" });

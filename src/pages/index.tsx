@@ -6,7 +6,7 @@ import iconCheckImg from "../assets/icon.png";
 import { FcGoogle } from "react-icons/fc";
 import { api } from "../lib/axios";
 import { FormEvent, useState } from "react";
-import { useSession, signIn } from "next-auth/react";
+import { useSession, signIn, signOut } from "next-auth/react";
 import toast from "react-hot-toast";
 import Head from "next/head";
 import Link from "next/link";
@@ -66,15 +66,33 @@ export default function Home({
           </div>
 
           <form className="mt-10 flex gap-2" onSubmit={createPoll}>
+            <input
+              className="flex-1 px-6 py-4 rounded bg-gray-800 border border-gray-600 text-sm text-gray-100"
+              type="text"
+              required
+              placeholder="Qual nome do seu bolão?"
+              value={pollTitle}
+              onChange={event => setPollTitle(event.target.value)}
+            />
             {session ? (
-              <button
-                className="bg-yellow-500 text-gray-900 text-sm py-4 px-6 rounded
-              font-bold hover:bg-yellow-700 transition-colors flex items-center
-              gap-2 w-full justify-center"
-                type="submit"
-              >
-                CRIAR MEU BOLÃO
-              </button>
+              <div className="flex w-full gap-2">
+                <button
+                  className="bg-yellow-500 text-gray-900 text-sm py-4 px-6 rounded
+                font-bold hover:bg-yellow-700 transition-colors flex items-center
+                gap-2 flex-1 justify-center"
+                  type="submit"
+                >
+                  CRIAR MEU BOLÃO
+                </button>
+                <button
+                  className="bg-gray-600 text-white text-sm py-4 px-4 rounded
+                font-bold hover:bg-red-600 transition-colors"
+                  type="button"
+                  onClick={() => signOut()}
+                >
+                  SAIR
+                </button>
+              </div>
             ) : (
               <button
                 className="bg-red-500 text-white text-sm py-4 px-6 rounded
